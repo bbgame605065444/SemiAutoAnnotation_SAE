@@ -1,0 +1,88 @@
+import cv2 as cv
+import numpy as np
+import os
+from matplotlib import pyplot as plt
+from matplotlib.widgets import Button
+
+#读取底图：
+image = cv.imread('C:\\Codes\\segment-anything\\data\\building\\tif1.png')
+
+#mask路径
+mask_dir = "C:\\Codes\\segment-anything\\output\\building\\tif1\\"
+mask_list = os.listdir(mask_dir)
+
+final_mask = np.zeros((image.shape[0], image.shape[1])).astype(np.uint8)
+
+# Define a function to handle button clicks
+def on_button_clicked(event):
+    # Get the text value of the button that was clicked
+    button_text = event.inaxes.title.get_text()
+    # Save the button value to a variable
+    if button_text == 'Button 1':
+        button1_value.append(1)
+    elif button_text == 'Button 2':
+        button2_value.append(2)
+
+# Create two empty lists to store the button values
+button1_value = []
+button2_value = []
+
+#读取mask路径中所有mask
+for i in range(len(mask_list)):
+    mask_path = mask_dir + mask_list[i]
+    mask = cv.imread(mask_path, 0)   # read as grayscale 以灰阶图像读取图像
+    mask = np.where(mask != 0, 1, 0)
+    #图像与mask叠加 用来检查是否
+    masked_image = np.zeros((image.shape[0], image.shape[1], image.shape[2])).astype(np.uint8)
+    for i in range(3):
+        masked_image[:, :, i] = np.multiply(image[:, :, i], mask)
+
+    # Convert the image to RGB for plotting
+    #masked_image = cv.cvtColor(masked_image, cv.COLOR_BGR2RGB)
+    # Display the image using Matplotlib
+    # 对比两张图像Create a figure with two subplots arranged horizontally
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    #绘制掩膜图像
+    ax1.imshow(masked_image)
+    ax1.set_title("masked_image")
+    # # Add a button to the left subplot
+    # button1 = Button(ax1, 'Button 0')
+    # button1.on_clicked(on_button_clicked)
+
+    #绘制原始图像
+    ax2.imshow(image)
+    ax2.set_title("original_image")
+
+    # # Add a button to the right subplot
+    # button1 = Button(ax2, 'Button 2')
+    # button1.on_clicked(on_button_clicked)
+
+    plt.show(block=False)
+    plt.waitforbuttonpress()
+    plt.close(fig)
+
+    # 等待用户键盘的输入
+    class_value = input("Enter a value: 0 means building, 1 means negative")
+    value = int(class_value)
+    #可以保留的区域求并集
+    if value == 0:
+        final_mask = final_mask + mask
+        print(final_mask)
+
+final_mask = np.where(final_mask != 0, 1, 0)
+#展示mask
+plt.imshow(final_mask)
+plt.show()
+cv.imwrite('C:\Codes\segment-anything\output\building_all\masked_image.png', final_mask)
+#展示mask掉的图像
+final_image = image
+for i in range(3):
+    final_image[:, :, i] = np.multiply(image[:, :, i], final_mask)
+
+plt.imshow(final_image)
+plt.show()
+cv.imwrite('C:\Codes\segment-anything\output\building_all\final_image.png', final_image)
+
+
+
+
